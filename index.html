@@ -1,101 +1,81 @@
-<html>
-   <head>
-      <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-      <title>My first X3DOM page with VR Controllers</title>
-      <script src='./x3dom-full.js'></script>
-      <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'></link>
-   </head>
-   <body>
-      <h1>Hello, X3DOM with VR Controllers!</h1>
-      <p>This page includes VR controllers pointing in the scene.</p>
-      <x3d width='500px' height='400px'>
-         <scene>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Display VR Device Type</title>
+    <script src='./x3dom-full.js'></script>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'/>
+</head>
+<body>
+    <h1>VR Device Type Detection</h1>
+    <div id="deviceInfo" style="font-size: 18px; color: black; padding: 10px;">Device Type: Detecting...</div>
+    <x3d width='800px' height='600px'>
+        <scene>
             <shape>
-               <appearance>
-                  <material diffuseColor='1 0 0'></material>
-               </appearance>
-               <box></box>
+                <appearance>
+                    <material diffuseColor="0 1 0"></material>
+                </appearance>
+                <box></box>
             </shape>
-            <transform translation='-3 0 0'>
-               <shape>
-                  <appearance>
-                     <material diffuseColor='0 1 0'></material>
-                  </appearance>
-                  <cone></cone>
-               </shape>
-            </transform>
-            <transform translation='3 0 0'>
-               <shape>
-                  <appearance>
-                     <material diffuseColor='0 0 1'></material>
-                  </appearance>
-                  <sphere></sphere>
-               </shape>
-            </transform>
+        </scene>
+    </x3d>
+    <button id="enterVR" style="position: fixed; bottom: 10px; right: 10px;">Enter VR</button>
+    <script>
+        let vrSession = null;
+        const deviceInfo = document.getElementById('deviceInfo');
 
-            <matrixtransform id="leftControllerTransform">
-               <inline id="leftControllerModel" render="false"></inline>
-            </matrixtransform>
-            <matrixtransform id="rightControllerTransform">
-               <inline id="rightControllerModel" render="false"></inline>
-            </matrixtransform>
-
-            <transform DEF="leftPointingIndicator" translation="0 0 -1">
-               <shape>
-                  <appearance>
-                     <material diffuseColor="0.8 0.2 0.2"></material>
-                  </appearance>
-                  <cylinder radius="0.05" height="1.5"></cylinder>
-               </shape>
-            </transform>
-            <transform DEF="rightPointingIndicator" translation="0 0 -1">
-               <shape>
-                  <appearance>
-                     <material diffuseColor="0.2 0.2 0.8"></material>
-                  </appearance>
-                  <cylinder radius="0.05" height="1.5"></cylinder>
-               </shape>
-            </transform>
-         </scene>
-      </x3d>
-
-      <script>
-         x3dom.VRControllerManager.prototype._controllers["meta-quest-touch-plus"] = {
-            left: "https://x3dom.org/download/assets/vr/oculus-go.glb",
-            right: "https://x3dom.org/download/assets/vr/oculus-go.glb",
-            scaleFactor: new x3dom.fields.SFVec3f(1, 1, 1),
-            offset: new x3dom.fields.SFVec3f(0.2, -0.3, -0.3),
-            axesScale: [1, -1]
-         };
-
-         const controllerManager = new x3dom.VRControllerManager(document);
-
-         function updateVRControllers(vrFrameData) {
-            if (!vrFrameData) return;
-
-            if (vrFrameData.controllers.left) {
-               const leftMatrix = controllerManager._getControllerMatrix(vrFrameData.controllers.left);
-               document.getElementById("leftControllerTransform").setAttribute("matrix", leftMatrix.toString());
-               document.getElementById("leftControllerModel").setAttribute("render", "true");
-
-               const leftDirection = controllerManager._getControllerDirection(vrFrameData.controllers.left.pose);
-               document.getElementById("leftPointingIndicator").setAttribute("rotation", `0 1 0 ${Math.atan2(leftDirection.z, leftDirection.x)}`);
+        document.getElementById('enterVR').addEventListener('click', () => {
+            if (navigator.xr) {
+                navigator.xr.requestSession("immersive-vr", { requiredFeatures: ["local-floor"] })
+                    .then((session) => {
+                        vrSession = session;
+                        vrSession.addEventListener("end", onSessionEnded);
+                        onSessionStarted(vrSession);
+                    });
+            } else {
+                console.warn("WebXR not supported on this browser.");
+                deviceInfo.textContent = "Device Type: WebXR not supported on this browser";
             }
+        });
 
-            if (vrFrameData.controllers.right) {
-               const rightMatrix = controllerManager._getControllerMatrix(vrFrameData.controllers.right);
-               document.getElementById("rightControllerTransform").setAttribute("matrix", rightMatrix.toString());
-               document.getElementById("rightControllerModel").setAttribute("render", "true");
+        function onSessionStarted(session) {
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.xr.enabled = true;
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            renderer.xr.setSession(session);
 
-               const rightDirection = controllerManager._getControllerDirection(vrFrameData.controllers.right.pose);
-               document.getElementById("rightPointingIndicator").setAttribute("rotation", `0 1 0 ${Math.atan2(rightDirection.z, rightDirection.x)}`);
-            }
-         }
+            renderer.domElement.requestFullscreen().catch((err) => {
+                console.warn("Unable to enter fullscreen mode:", err);
+            });
 
-         document.addEventListener("xrframe", (event) => {
-            const vrFrameData = event.detail;
-            updateVRControllers(vrFrameData);
-         });
-      </script>
-   </body>
+            session.requestAnimationFrame(onXRFrame);
+        }
+
+        function onSessionEnded() {
+            vrSession = null;
+            document.querySelector("canvas").remove();
+            deviceInfo.textContent = "Device Type: VR session ended";  
+        }
+
+        function onXRFrame(time, frame) {
+            const session = frame.session;
+            const referenceSpace = session.requestReferenceSpace("local").then((refSpace) => {
+                const inputSources = session.inputSources;
+                let deviceType = "Unknown";
+
+                inputSources.forEach((inputSource) => {
+                    if (inputSource.hand) return; 
+
+                    if (inputSource.profiles.length > 0) {
+                        deviceType = inputSource.profiles[0];
+                    }
+                });
+                deviceInfo.textContent = `Device Type: ${deviceType}`;
+
+                session.requestAnimationFrame(onXRFrame);
+            });
+        }
+    </script>
+</body>
 </html>
