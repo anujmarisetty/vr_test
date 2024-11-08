@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>Display VR Device Type</title>
+    <title>Display VR Device Type and Controller State</title>
     <script src='./x3dom-full.js'></script>
     <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'/>
 </head>
 <body>
-    <h1>VR Device Type Detection</h1>
+    <h1>VR Device Type Detection and Controller State</h1>
     <div id="deviceInfo" style="font-size: 18px; color: black; padding: 10px;">Device Type: Detecting...</div>
     <x3d width='800px' height='600px'>
-        <scene>
+        <scene id="vrScene">
             <shape>
                 <appearance>
                     <material diffuseColor="0 1 0"></material>
@@ -21,61 +21,86 @@
     </x3d>
     <button id="enterVR" style="position: fixed; bottom: 10px; right: 10px;">Enter VR</button>
     <script>
-        let vrSession = null;
+        let cubes = [];
+        let toggleState = { right: { A: false, B: false } };
         const deviceInfo = document.getElementById('deviceInfo');
 
-        document.getElementById('enterVR').addEventListener('click', () => {
-            if (navigator.xr) {
-                navigator.xr.requestSession("immersive-vr", { requiredFeatures: ["local-floor"] })
-                    .then((session) => {
-                        vrSession = session;
-                        vrSession.addEventListener("end", onSessionEnded);
-                        onSessionStarted(vrSession);
-                    });
-            } else {
-                console.warn("WebXR not supported on this browser.");
-                deviceInfo.textContent = "Device Type: WebXR not supported on this browser";
+        // Create a new cube
+        function createCube() {
+            const vrScene = document.getElementById('vrScene');
+            const shape = document.createElement('shape');
+
+            const appearance = document.createElement('appearance');
+            const material = document.createElement('material');
+            material.setAttribute('diffuseColor', '1 0 0');
+            appearance.appendChild(material);
+
+            const box = document.createElement('box');
+            shape.appendChild(appearance);
+            shape.appendChild(box);
+
+            vrScene.appendChild(shape);
+            cubes.push(shape);
+        }
+
+        // Remove the last added cube
+        function removeCube() {
+            if (cubes.length > 0) {
+                const vrScene = document.getElementById('vrScene');
+                const lastCube = cubes.pop();
+                vrScene.removeChild(lastCube);
             }
-        });
+        }
 
         function onSessionStarted(session) {
+            session.addEventListener('end', onSessionEnded);
+
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.xr.enabled = true;
-            renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
-            renderer.xr.setSession(session);
 
-            renderer.domElement.requestFullscreen().catch((err) => {
-                console.warn("Unable to enter fullscreen mode:", err);
-            });
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 0);
 
-            session.requestAnimationFrame(onXRFrame);
+            renderer.setAnimationLoop(() => renderer.render(scene, camera));
+
+            session.requestAnimationFrame((time, frame) => onXRFrame(time, frame, scene, camera, renderer, session));
         }
 
-        function onSessionEnded() {
-            vrSession = null;
-            document.querySelector("canvas").remove();
-            deviceInfo.textContent = "Device Type: VR session ended";  
-        }
-
-        function onXRFrame(time, frame) {
-            const session = frame.session;
-            const referenceSpace = session.requestReferenceSpace("local").then((refSpace) => {
-                const inputSources = session.inputSources;
-                let deviceType = "Unknown";
-
-                inputSources.forEach((inputSource) => {
-                    if (inputSource.hand) return; 
-
-                    if (inputSource.profiles.length > 0) {
-                        deviceType = inputSource.profiles[0];
+        function onXRFrame(time, frame, scene, camera, renderer, session) {
+            const inputSources = session.inputSources;
+            for (const inputSource of inputSources) {
+                if (inputSource.handedness === 'right' && inputSource.gamepad) {
+                    const gamepad = inputSource.gamepad;
+                    // Button A (Index 0) to add a cube
+                    if (gamepad.buttons[0].pressed && !toggleState.right.A) {
+                        createCube();
+                        toggleState.right.A = true;
+                    } else if (!gamepad.buttons[0].pressed) {
+                        toggleState.right.A = false;
                     }
-                });
-                deviceInfo.textContent = `Device Type: ${deviceType}`;
 
-                session.requestAnimationFrame(onXRFrame);
-            });
+                    // Button B (Index 1) to remove a cube
+                    if (gamepad.buttons[1].pressed && !toggleState.right.B) {
+                        removeCube();
+                        toggleState.right.B = true;
+                    } else if (!gamepad.buttons[1].pressed) {
+                        toggleState.right.B = false;
+                    }
+                }
+            }
+
+            session.requestAnimationFrame((t, f) => onXRFrame(t, f, scene, camera, renderer, session));
         }
+
+        function onSessionEnded(event) {
+            console.log('Session ended.');
+        }
+
+        document.getElementById('enterVR').addEventListener('click', () => {
+            navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
+        });
     </script>
 </body>
 </html>
