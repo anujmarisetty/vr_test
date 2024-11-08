@@ -19237,216 +19237,280 @@ function setNamespace(e, t, A) {
         (s[n] = (A << 11) & (i << 6) & (o << 1) & t);
     return s;
   }),
-  (x3dom.VRControllerManager = function (e) {
-    (this.leftInline = void 0),
-      (this.leftTransform = void 0),
-      (this.rightInline = void 0),
-      (this.rightTransform = void 0),
-      (this.wasPresenting = !1),
-      (this.modelsAdded = !1),
-      (this._doc = e),
-      (this._controllers = {
-        "htc-vive": {
-          left: "https://x3dom.org/download/assets/vr/vive.glb",
-          right: "https://x3dom.org/download/assets/vr/vive.glb",
-          scaleFactor: new x3dom.fields.SFVec3f(40, 40, 40),
-          offset: new x3dom.fields.SFVec3f(),
-          axesScale: [1, 1],
-        },
-        "oculus-touch": {
-          left: "https://x3dom.org/download/assets/vr/oculus-touch-left.glb",
-          right: "https://x3dom.org/download/assets/vr/oculus-touch-right.glb",
-          scaleFactor: new x3dom.fields.SFVec3f(39.5, 39.5, 39.5),
-          offset: new x3dom.fields.SFVec3f(),
-          axesScale: [1, 1],
-        },
-        "oculus-go": {
-          left: "https://x3dom.org/download/assets/vr/oculus-go.glb",
-          right: "https://x3dom.org/download/assets/vr/oculus-go.glb",
-          scaleFactor: new x3dom.fields.SFVec3f(1, 1, 1),
-          offset: new x3dom.fields.SFVec3f(0.2, -0.3, -0.3),
-          axesScale: [-1, 1],
-        },
-        "meta-quest-touch-plus": {
-          left: "./Quest3_left.glb",
-          right: "./Quest3_right.glb",
-          scaleFactor: new x3dom.fields.SFVec3f(0.01, 0.01, 0.01),
-          offset: new x3dom.fields.SFVec3f(0.2, -0.3, -0.3),
-          axesScale: [1, -1],
-          rotation: new x3dom.fields.SFRotation(0, 1, 0, Math.PI)
-        },
-      }),
+  (x3dom.VRControllerManager = function ( document )
+  {
+      this.leftInline     = undefined;
+      this.leftTransform  = undefined;
+      this.rightInline    = undefined;
+      this.rightTransform = undefined;
+      this.wasPresenting  = false;
+      this.leftModelAdded    = false;
+      this.rightModelAdded    = false;
+      this._doc = document;
+  
+      this._controllers = {
+          "htc-vive" : {
+              left        : "https://x3dom.org/download/assets/vr/vive.glb",
+              right       : "https://x3dom.org/download/assets/vr/vive.glb",
+              scaleFactor : new x3dom.fields.SFVec3f( 40, 40, 40 ),
+              offset      : new x3dom.fields.SFVec3f(),
+              axesScale   : [ 1, 1 ]
+          },
+          "oculus-touch" : {
+              left        : "https://x3dom.org/download/assets/vr/oculus-touch-left.glb",
+              right       : "https://x3dom.org/download/assets/vr/oculus-touch-right.glb",
+              scaleFactor : new x3dom.fields.SFVec3f( 39.5, 39.5, 39.5 ),
+              offset      : new x3dom.fields.SFVec3f(),
+              axesScale   : [ 1, 1 ]
+          },
+          "oculus-go" : {
+              left        : "https://x3dom.org/download/assets/vr/oculus-go.glb",
+              right       : "https://x3dom.org/download/assets/vr/oculus-go.glb",
+              scaleFactor : new x3dom.fields.SFVec3f( 1, 1, 1 ),
+              offset      : new x3dom.fields.SFVec3f( 0.2, -0.3, -0.3 ),
+              axesScale   : [ -1, 1 ]
+          },
+          "default" : {
+              left        : "https://andreasplesch.github.io/Library/web3d/x3dom/XRControllerViveScaled.x3d",
+              right       : "https://andreasplesch.github.io/Library/web3d/x3dom/XRControllerViveScaled.x3d",
+              scaleFactor : new x3dom.fields.SFVec3f( 40, 40, 40 ),
+              offset      : new x3dom.fields.SFVec3f(),
+              axesScale   : [ 1, 1 ]
+          },
+      };
+  
       this._addInlines();
   }),
-  (x3dom.VRControllerManager.prototype._addInlines = function () {
-    var e = document.querySelector("scene") || document.querySelector("Scene");
-    e &&
-      ((this.leftTransform = document.createElement("matrixtransform")),
-      (this.leftInline = document.createElement("inline")),
-      (this.rightTransform = document.createElement("matrixtransform")),
-      (this.rightInline = document.createElement("inline")),
-      this.leftInline.setAttribute("render", "false"),
-      this.rightInline.setAttribute("render", "false"),
-      this.leftTransform.appendChild(this.leftInline),
-      this.rightTransform.appendChild(this.rightInline),
-      e.appendChild(this.leftTransform),
-      e.appendChild(this.rightTransform));
-  }),
-  (x3dom.VRControllerManager.prototype._addControllerModels = function (e) {
-    if (!this.modelsAdded) {
-      if (e.left) {
-        const t = this._getControllerModelURL(e.left.type, "left");
-        this.leftInline.setAttribute("url", t);
+  (x3dom.VRControllerManager.prototype._addInlines = function ()
+  {
+      var x3dScene = document.querySelector( "scene" ) || document.querySelector( "Scene" );
+  
+      if ( x3dScene )
+      {
+          this.leftTransform  = document.createElement( "matrixtransform" );
+          this.leftInline     = document.createElement( "inline" );
+  
+          this.rightTransform  = document.createElement( "matrixtransform" );
+          this.rightInline     = document.createElement( "inline" );
+  
+          this.leftInline.setAttribute( "render", "false" );
+          this.rightInline.setAttribute( "render", "false" );
+  
+          this.leftTransform.appendChild( this.leftInline );
+          this.rightTransform.appendChild( this.rightInline );
+  
+          x3dScene.appendChild( this.leftTransform );
+          x3dScene.appendChild( this.rightTransform );
       }
-      if (e.right) {
-        const t = this._getControllerModelURL(e.right.type, "right");
-        this.rightInline.setAttribute("url", t);
+  }),
+  (x3dom.VRControllerManager.prototype._addControllerModels = function ( controllers )
+  {
+      if ( controllers.left && !this.leftModelAdded )
+      {
+          const url = this._getControllerModelURL( controllers.left.type, "left" );
+          this.leftInline.setAttribute( "url", url );
+          this.leftModelAdded = true;
       }
-      this.modelsAdded = !0;
-    }
-  }),
-  (x3dom.VRControllerManager.prototype._getControllerAxesScale = function (e) {
-    return void 0 === this._controllers[e]
-      ? [1, 1]
-      : this._controllers[e].axesScale;
-  }),
-  (x3dom.VRControllerManager.prototype._getControllerDirection = function (e) {
-    return (
-      e.orientation
-        ? x3dom.fields.Quaternion.fromArray(e.orientation)
-        : new x3dom.fields.Quaternion()
-    )
-      .toMatrix()
-      .e2();
-  }),
-  (x3dom.VRControllerManager.prototype._getControllerModelURL = function (
-    e,
-    t
-  ) {
-    return void 0 === this._controllers[e] ? "" : this._controllers[e][t];
-  }),
-  (x3dom.VRControllerManager.prototype._getControllerOffset = function (e) {
-    return void 0 === this._controllers[e]
-      ? [0, 0, 0]
-      : this._controllers[e].offset;
-  }),
-  (x3dom.VRControllerManager.prototype._getControllerScaleFactor = function (
-    e
-  ) {
-    return void 0 === this._controllers[e]
-      ? [1, 1, 1]
-      : this._controllers[e].scaleFactor;
-  }),
-  (x3dom.VRControllerManager.prototype.fit = function (e) {
-    var t = e._scene._lastMin,
-      A = e._scene._lastMax.subtract(t).multiply(0.5).length(),
-      i = e.vrLeftViewMatrix.e2(),
-      o = Math.min(e._width / e._height, 1),
-      s = A / Math.tan((0.5 * Math.PI) / 2) / o;
-    e._movement = i.multiply(-0.001 * s);
-  }),
-  (x3dom.VRControllerManager.prototype.update = function (e, t) {
-    t
-      ? (this.wasPresenting ||
-          (this.leftInline.setAttribute("render", "true"),
-          this.rightInline.setAttribute("render", "true"),
-          this.fit(e),
-          (this.wasPresenting = !0)),
-        this._addControllerModels(t.controllers),
-        this._updateMatrices(e, t.controllers),
-        this._updateControllerModels(e, t.controllers))
-      : this.wasPresenting &&
-        (this.leftInline.setAttribute("render", "false"),
-        this.rightInline.setAttribute("render", "false"),
-        (this.wasPresenting = !1));
-  }),
-  (x3dom.VRControllerManager.prototype._updateMatrices = function (e, t) {
-    var A = new x3dom.fields.SFMatrix4f(),
-      i = new x3dom.fields.SFMatrix4f(),
-      o = [0, 0];
-    if (t.left) {
-      var s = this._getControllerAxesScale(t.left.type);
-      if (
-        ((o[0] += t.left.gamepad.axes[0] * s[0]),
-        (o[1] += t.left.gamepad.axes[1] * s[1]),
-        t.left.gamepad.buttons[0].pressed)
-      ) {
-        const A = t.left.pose,
-          i = this._getControllerDirection(A),
-          o = this._getViewAreaZoom(e);
-        e._movement = e._movement.add(i.multiply(o));
+  
+      if ( controllers.right && !this.rightModelAdded )
+      {
+          const url = this._getControllerModelURL( controllers.right.type, "right" );
+          this.rightInline.setAttribute( "url", url );
+          this.rightModelAdded = true;
       }
-    }
-    if (t.right) {
-      s = this._getControllerAxesScale(t.right.type);
-      if (
-        ((o[0] += t.right.gamepad.axes[0] * s[0]),
-        (o[1] += t.right.gamepad.axes[1] * s[1]),
-        t.right.gamepad.buttons[0].pressed)
-      ) {
-        const A = t.right.pose,
-          i = this._getControllerDirection(A),
-          o = this._getViewAreaZoom(e);
-        e._movement = e._movement.add(i.multiply(o));
+  }),
+  (x3dom.VRControllerManager.prototype._getControllerAxesScale = function ( type )
+  {
+      if ( this._controllers[ type ] === undefined )
+      {
+          return [ 1, 1 ];
       }
-    }
-    var n = 5 * o[0],
-      r = 5 * o[1],
-      a = e.vrLeftViewMatrix.e2(),
-      d = e.vrLeftViewMatrix.e0(),
-      h = e._scene._lastMax.subtract(e._scene._lastMin).length();
-    (h = h < x3dom.fields.Eps ? 1 : h),
-      (a = new x3dom.fields.SFVec3f(-a.x, -a.y, a.z).multiply(
-        h * (r / e._height)
-      )),
-      (d = new x3dom.fields.SFVec3f(-d.x, -d.y, d.z).multiply(
-        h * (n / e._width)
-      )),
-      (e._movement = e._movement.add(d).add(a)),
-      (A = x3dom.fields.SFMatrix4f.translation(e._movement)),
-      (e.vrLeftViewMatrix = e.vrLeftViewMatrix.mult(A).mult(i)),
-      (e.vrRightViewMatrix = e.vrRightViewMatrix.mult(A).mult(i));
+  
+      return this._controllers[ type ].axesScale;
   }),
-  (x3dom.VRControllerManager.prototype._updateControllerModels = function (
-    e,
-    t
-  ) {
-    if (t.left) {
-      var A = t.left.pose,
-        i = this._getControllerOffset(t.left.type),
-        o = A.orientation
-          ? x3dom.fields.Quaternion.fromArray(A.orientation)
-          : new x3dom.fields.Quaternion(),
-        s = A.position ? x3dom.fields.SFVec3f.fromArray(A.position) : i,
-        n = this._getControllerScaleFactor(t.left.type);
-      s = s.subtract(e._movement);
-      var r = x3dom.fields.SFMatrix4f.fromRotationTranslationScale(o, s, n);
-      this.leftTransform.setAttribute("matrix", r.toString());
-    }
-    if (t.right) {
-      (A = t.right.pose),
-        (i = this._getControllerOffset(t.right.type)),
-        (o = A.orientation
-          ? x3dom.fields.Quaternion.fromArray(A.orientation)
-          : new x3dom.fields.Quaternion()),
-        (s = A.position ? x3dom.fields.SFVec3f.fromArray(A.position) : i),
-        (n = this._getControllerScaleFactor(t.right.type));
-      s = s.subtract(e._movement);
-      r = x3dom.fields.SFMatrix4f.fromRotationTranslationScale(o, s, n);
-      this.rightTransform.setAttribute("matrix", r.toString());
-    }
+  (x3dom.VRControllerManager.prototype._getControllerDirection = function ( pose )
+  {
+      const controllerRotation = ( pose.orientation ? x3dom.fields.Quaternion.fromArray( pose.orientation ) : new x3dom.fields.Quaternion() );
+      const cRotMatrix = controllerRotation.toMatrix();
+      return cRotMatrix.e2();
   }),
-  (x3dom.VRControllerManager.prototype._getViewAreaZoom = function (e) {
-    var t = e._scene.getNavigationInfo(),
-      A = e._scene.getViewpoint(),
-      i = e._scene._lastMax.subtract(e._scene._lastMin).length();
-    return (
-      ((i =
-        ((i = Math.min(i, A.getFar())) < x3dom.fields.Eps ? 1 : i) *
-        t._vf.speed) *
-        (60 / this._doc._x3dElem.runtime.getFPS())) /
-      e._height
-    );
+  (x3dom.VRControllerManager.prototype._getControllerModelURL = function ( type, side )
+  {
+      if ( this._controllers[ type ] === undefined )
+      {
+          return this._controllers[ "default" ][ side ];
+      }
+  
+      return this._controllers[ type ][ side ];
+  }),
+  (x3dom.VRControllerManager.prototype._getControllerOffset = function ( type )
+  {
+      if ( this._controllers[ type ] === undefined )
+      {
+          return [ 0, 0, 0 ];
+      }
+  
+      return this._controllers[ type ].offset;
+  }),
+  (x3dom.VRControllerManager.prototype._getControllerScaleFactor = function ( type )
+  {
+      if ( this._controllers[ type ] === undefined )
+      {
+          return [ 1, 1, 1 ];
+      }
+  
+      return this._controllers[ type ].scaleFactor;
+  }),
+  (x3dom.VRControllerManager.prototype.fit = function ( viewarea )
+  {
+      var min = viewarea._scene._lastMin;
+      var max = viewarea._scene._lastMax;
+  
+      var dia2 = max.subtract( min ).multiply( 0.5 );    // half diameter
+      var bsr = dia2.length();                       // bounding sphere radius
+  
+      var viewDir = viewarea.vrLeftViewMatrix.e2();
+  
+      var aspect =  Math.min( viewarea._width / viewarea._height, 1 );
+  
+      var tanfov2 = Math.tan( 0.5 * Math.PI / 2.0 );
+      var dist = bsr / tanfov2 / aspect;
+  
+      var scaleFactor = 0.001;
+      viewarea._movement = viewDir.multiply( -1 * scaleFactor * dist );
+  }),
+  (x3dom.VRControllerManager.prototype.update = function ( viewarea, vrFrameData )
+  {
+      if ( !vrFrameData )
+      {
+          if ( this.wasPresenting )
+          {
+              this.leftInline.setAttribute( "render", "false" );
+              this.rightInline.setAttribute( "render", "false" );
+  
+              this.wasPresenting = false;
+          }
+  
+          return;
+      }
+  
+      if ( !this.wasPresenting )
+      {
+          this.leftInline.setAttribute( "render", "true" );
+          this.rightInline.setAttribute( "render", "true" );
+  
+          this.fit( viewarea );
+  
+          this.wasPresenting = true;
+      }
+  
+      this._addControllerModels( vrFrameData.controllers );
+      this._updateMatrices( viewarea, vrFrameData.controllers );
+      this._updateControllerModels( viewarea, vrFrameData.controllers );
+  }),
+  (x3dom.VRControllerManager.prototype._updateMatrices = function ( viewarea, controllers )
+  {
+      var transMat = new x3dom.fields.SFMatrix4f();
+      var rotMat = new x3dom.fields.SFMatrix4f();
+      var axes = [ 0, 0 ];
+  
+      if ( controllers.left )
+      {
+          var axesScale = this._getControllerAxesScale( controllers.left.type );
+  
+          axes[ 0 ] += controllers.left.gamepad.axes[ 0 ] * axesScale[ 0 ];
+          axes[ 1 ] += controllers.left.gamepad.axes[ 1 ] * axesScale[ 1 ];
+  
+          if ( controllers.left.gamepad.buttons[ 0 ].pressed )
+          {
+              const pose = controllers.left.pose;
+              const cDirection = this._getControllerDirection( pose );
+              const scaleFactor = this._getViewAreaZoom( viewarea );
+              viewarea._movement = viewarea._movement.add( cDirection.multiply( scaleFactor ) );
+          }
+      }
+  
+      if ( controllers.right )
+      {
+          var axesScale = this._getControllerAxesScale( controllers.right.type );
+  
+          axes[ 0 ] += controllers.right.gamepad.axes[ 0 ] * axesScale[ 0 ];
+          axes[ 1 ] += controllers.right.gamepad.axes[ 1 ] * axesScale[ 1 ];
+  
+          if ( controllers.right.gamepad.buttons[ 0 ].pressed )
+          {
+              const pose = controllers.right.pose;
+              const cDirection = this._getControllerDirection( pose );
+              const scaleFactor = this._getViewAreaZoom( viewarea );
+              viewarea._movement = viewarea._movement.add( cDirection.multiply( scaleFactor ) );
+          }
+      }
+  
+      var dx = axes[ 0 ] * 5;
+      var dy = axes[ 1 ] * 5;
+  
+      var viewDir = viewarea.vrLeftViewMatrix.e2();
+      var rightDir = viewarea.vrLeftViewMatrix.e0();
+  
+      var d = ( viewarea._scene._lastMax.subtract( viewarea._scene._lastMin ) ).length();
+      d = ( ( d < x3dom.fields.Eps ) ? 1 : d );
+  
+      viewDir  = new x3dom.fields.SFVec3f( -viewDir.x,  -viewDir.y,  viewDir.z ).multiply( d * ( dy / viewarea._height ) );
+      rightDir = new x3dom.fields.SFVec3f( -rightDir.x, -rightDir.y, rightDir.z ).multiply( d * ( dx / viewarea._width ) );
+  
+      viewarea._movement = viewarea._movement.add( rightDir ).add( viewDir );
+      transMat = x3dom.fields.SFMatrix4f.translation( viewarea._movement );
+  
+      viewarea.vrLeftViewMatrix  = viewarea.vrLeftViewMatrix.mult( transMat ).mult( rotMat );
+      viewarea.vrRightViewMatrix = viewarea.vrRightViewMatrix.mult( transMat ).mult( rotMat );
+  
+      //Enable default Mouse Navigation
+      // viewarea.vrLeftViewMatrix  = viewarea.vrLeftViewMatrix.mult(viewarea._transMat).mult(viewarea._rotMat);
+      // viewarea.vrRightViewMatrix = viewarea.vrRightViewMatrix.mult(viewarea._transMat).mult(viewarea._rotMat);
+  }),
+  (x3dom.VRControllerManager.prototype._updateControllerModels = function ( viewarea, controllers )
+  {
+      if ( controllers.left )
+      {
+          var pose     = controllers.left.pose;
+          var offset   = this._getControllerOffset( controllers.left.type );
+          var rotation = ( pose.orientation ) ? x3dom.fields.Quaternion.fromArray( pose.orientation ) : new x3dom.fields.Quaternion();
+          var position = ( pose.position ) ? x3dom.fields.SFVec3f.fromArray( pose.position ) : offset;
+          var scale    = this._getControllerScaleFactor( controllers.left.type );
+  
+          position = position.subtract( viewarea._movement );
+  
+          var matrix = x3dom.fields.SFMatrix4f.fromRotationTranslationScale( rotation, position, scale );
+  
+          this.leftTransform.setAttribute( "matrix", matrix.toString() );
+      }
+  
+      if ( controllers.right )
+      {
+          var pose     = controllers.right.pose;
+          var offset   = this._getControllerOffset( controllers.right.type );
+          var rotation = ( pose.orientation ) ? x3dom.fields.Quaternion.fromArray( pose.orientation ) : new x3dom.fields.Quaternion();
+          var position = ( pose.position ) ? x3dom.fields.SFVec3f.fromArray( pose.position ) : offset;
+          var scale    = this._getControllerScaleFactor( controllers.right.type );
+  
+          position = position.subtract( viewarea._movement );
+  
+          var matrix = x3dom.fields.SFMatrix4f.fromRotationTranslationScale( rotation, position, scale );
+  
+          this.rightTransform.setAttribute( "matrix", matrix.toString() );
+      }
+  }),
+  (x3dom.VRControllerManager.prototype._getViewAreaZoom = function ( viewarea )
+  {
+      var navi = viewarea._scene.getNavigationInfo();
+      var viewpoint = viewarea._scene.getViewpoint();
+      var d = ( viewarea._scene._lastMax.subtract( viewarea._scene._lastMin ) ).length();
+      d = Math.min( d, viewpoint.getFar() );
+      d = ( ( d < x3dom.fields.Eps ) ? 1 : d ) * navi._vf.speed;
+      const fps = this._doc._x3dElem.runtime.getFPS();
+      const zoomAmount = 60 / fps;
+  
+      return d * ( zoomAmount ) / viewarea._height;
   }),
   (x3dom.JSONParser = function (e) {
     this.x3djsonNS = "http://www.web3d.org/specifications/x3d-namespace";
