@@ -1,106 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>Display VR Device Type and Controller State</title>
-    <script src='./x3dom-full.js'></script>
-    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controller and Cube Tracking</title>
+  <script src="x3dom-full.js"></script>
+  <link rel="stylesheet" href="x3dom.css">
 </head>
 <body>
-    <h1>VR Device Type Detection and Controller State</h1>
-    <div id="deviceInfo" style="font-size: 18px; color: black; padding: 10px;">Device Type: Detecting...</div>
-    <x3d width='800px' height='600px'>
-        <scene id="vrScene">
-            <shape>
-                <appearance>
-                    <material diffuseColor="0 1 0"></material>
-                </appearance>
-                <box></box>
-            </shape>
-        </scene>
-    </x3d>
-    <button id="enterVR" style="position: fixed; bottom: 10px; right: 10px;">Enter VR</button>
-    <script>
-        let cubes = [];
-        let toggleState = { right: { A: false, B: false } };
-        const deviceInfo = document.getElementById('deviceInfo');
+  <x3d width="100%" height="600px" id="x3dElement">
+    <scene>
+      Left Controller
+      <!-- <transform id="leftControllerTransform">
+        <inline url="controller-left.glb"></inline>
+      </transform> -->
 
-        // Create a new cube
-        function createCube() {
-            const vrScene = document.getElementById('vrScene');
-            const shape = document.createElement('shape');
+      <!-- Right Controller -->
+      <!-- <transform id="rightControllerTransform">
+        <inline url="controller-right.glb"></inline>
+      </transform> -->
 
-            const appearance = document.createElement('appearance');
-            const material = document.createElement('material');
-            material.setAttribute('diffuseColor', '1 0 0');
-            appearance.appendChild(material);
-
-            const box = document.createElement('box');
-            shape.appendChild(appearance);
-            shape.appendChild(box);
-
-            vrScene.appendChild(shape);
-            cubes.push(shape);
-        }
-
-        // Remove the last added cube
-        function removeCube() {
-            if (cubes.length > 0) {
-                const vrScene = document.getElementById('vrScene');
-                const lastCube = cubes.pop();
-                vrScene.removeChild(lastCube);
-            }
-        }
-
-        function onSessionStarted(session) {
-            session.addEventListener('end', onSessionEnded);
-
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.xr.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.6, 0);
-
-            renderer.setAnimationLoop(() => renderer.render(scene, camera));
-
-            session.requestAnimationFrame((time, frame) => onXRFrame(time, frame, scene, camera, renderer, session));
-        }
-
-        function onXRFrame(time, frame, scene, camera, renderer, session) {
-            const inputSources = session.inputSources;
-            for (const inputSource of inputSources) {
-                if (inputSource.handedness === 'right' && inputSource.gamepad) {
-                    const gamepad = inputSource.gamepad;
-                    // Button A (Index 0) to add a cube
-                    if (gamepad.buttons[0].pressed && !toggleState.right.A) {
-                        createCube();
-                        toggleState.right.A = true;
-                    } else if (!gamepad.buttons[0].pressed) {
-                        toggleState.right.A = false;
-                    }
-
-                    // Button B (Index 1) to remove a cube
-                    if (gamepad.buttons[1].pressed && !toggleState.right.B) {
-                        removeCube();
-                        toggleState.right.B = true;
-                    } else if (!gamepad.buttons[1].pressed) {
-                        toggleState.right.B = false;
-                    }
-                }
-            }
-
-            session.requestAnimationFrame((t, f) => onXRFrame(t, f, scene, camera, renderer, session));
-        }
-
-        function onSessionEnded(event) {
-            console.log('Session ended.');
-        }
-
-        document.getElementById('enterVR').addEventListener('click', () => {
-            navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
-        });
-    </script>
+      <!-- Cube -->
+      <transform id="cubeTransform" translation="0 0 -2">
+        <shape>
+          <appearance>
+            <material diffuseColor="0 0 1"></material>
+          </appearance>
+          <box size="0.5 0.5 0.5"></box>
+        </shape>
+      </transform>
+    </scene>
+  </x3d>
+  <button id="enterVR" style="position: absolute; top: 10px; left: 10px; z-index: 10;">
+    Enter VR
+  </button>
+  <script src="script.js"></script>
 </body>
 </html>
